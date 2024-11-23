@@ -1,24 +1,5 @@
 return {
     {
-        -- for lsp features in code cells / embedded code
-        'jmbuhr/otter.nvim',
-        dev = false,
-        dependencies = {
-            {
-                'neovim/nvim-lspconfig',
-                'nvim-treesitter/nvim-treesitter',
-                'hrsh7th/nvim-cmp',
-            },
-        },
-        opts = {
-            buffers = {
-                set_filetype = true,
-                write_to_disk = false,
-            },
-            handle_leading_whitespace = true,
-        },
-    },
-    {
         "L3MON4D3/LuaSnip",
         keys = function()
             return {}
@@ -28,9 +9,7 @@ return {
         "hrsh7th/nvim-cmp",
         dependencies = {
             "hrsh7th/cmp-emoji",
-            "jmbuhr/otter.nvim",
         },
-
         opts = function(_, opts)
             local cmp = require("cmp")
 
@@ -42,7 +21,6 @@ return {
             end
 
             local luasnip = require("luasnip")
-
 
             opts.mapping = opts.mapping or {}
             opts.mapping["<leader><Tab>"] = cmp.mapping(function(fallback)
@@ -83,7 +61,6 @@ return {
             "L3MON4D3/LuaSnip",
             "saadparwaiz1/cmp_luasnip",
             "j-hui/fidget.nvim",
-            'jmbuhr/otter.nvim',
         },
         config = function()
             local cmp_lsp = require("cmp_nvim_lsp")
@@ -92,20 +69,21 @@ return {
                 {},
                 vim.lsp.protocol.make_client_capabilities(),
                 cmp_lsp.default_capabilities())
-            require 'lspconfig'.mojo.setup {}
+
+            capabilities.offsetEncoding = { "utf-16" }
+
             require("fidget").setup()
             require("mason").setup()
             require("mason-lspconfig").setup({
                 ensure_installed = {
                     "lua_ls",
                     "rust_analyzer",
-                    "ruff_lsp",
+                    "ruff",
                     "pyright",
                     "dockerls",
                     "kotlin_language_server",
                     "taplo",
                     "yamlls",
-                    "tsserver",
                     "biome",
                     "marksman",
                     "jqls",
@@ -113,7 +91,7 @@ return {
                 handlers = {
                     function(server_name)
                         require("lspconfig")[server_name].setup {
-                            capabilities = capabilities
+                            capabilities = capabilities,
                         }
                     end,
                     ["lua_ls"] = function()
@@ -129,9 +107,9 @@ return {
                             }
                         }
                     end,
-                    ["ruff_lsp"] = function()
+                    ["ruff"] = function()
                         local lspconfig = require("lspconfig")
-                        lspconfig["ruff_lsp"].setup {
+                        lspconfig["ruff"].setup {
                             capabilities = capabilities,
                             on_attach = function(client, _)
                                 client.server_capabilities.hoverProvider = false
@@ -164,18 +142,28 @@ return {
                     ["tsserver"] = function()
                         local lspconfig = require("lspconfig")
                         lspconfig["tsserver"].setup {
+                            capabilities = capabilities,
+                            on_init = function(client)
+                                client.offset_encoding = "utf-16"
+                            end,
                         }
                     end,
                     ["biome"] = function()
                         local lspconfig = require("lspconfig")
-
                         lspconfig["biome"].setup {
+                            capabilities = capabilities,
+                            on_init = function(client)
+                                client.offset_encoding = "utf-16"
+                            end,
                         }
                     end,
                     ["marksman"] = function()
                         local lspconfig = require("lspconfig")
-
                         lspconfig["marksman"].setup {
+                            capabilities = capabilities,
+                            on_init = function(client)
+                                client.offset_encoding = "utf-16"
+                            end,
                             settings = {
                                 filetypes = {
                                     "markdown",
@@ -187,15 +175,18 @@ return {
                     end,
                     ["jqls"] = function()
                         local lspconfig = require("lspconfig")
-
                         lspconfig["jqls"].setup {
+                            capabilities = capabilities,
+                            on_init = function(client)
+                                client.offset_encoding = "utf-16"
+                            end,
                         }
                     end,
                 }
             })
 
             local cmp = require("cmp")
-            local luasnip = require 'luasnip'
+            local luasnip = require('luasnip')
             local cmp_select = { behavior = cmp.SelectBehavior.Select }
             cmp.setup({
                 snippet = {
