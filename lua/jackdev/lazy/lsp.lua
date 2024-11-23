@@ -1,51 +1,160 @@
 return {
     {
         "L3MON4D3/LuaSnip",
-        keys = function()
-            return {}
+        dependencies = {
+            "rafamadriz/friendly-snippets",
+        },
+        config = function()
+            require("luasnip.loaders.from_vscode").lazy_load()
         end,
     },
     {
         "hrsh7th/nvim-cmp",
         dependencies = {
-            "hrsh7th/cmp-emoji",
+            "hrsh7th/cmp-nvim-lsp",
+            "hrsh7th/cmp-buffer",
+            "hrsh7th/cmp-path",
+            "hrsh7th/cmp-cmdline",
+            "saadparwaiz1/cmp_luasnip",
+            "hrsh7th/cmp-nvim-lua",
+            "onsails/lspkind.nvim",
         },
-        opts = function(_, opts)
+        config = function()
             local cmp = require("cmp")
-
-            local has_words_before = function()
-                unpack = unpack or table.unpack
-                local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-                return col ~= 0 and
-                    vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
-            end
-
             local luasnip = require("luasnip")
+            local lspkind = require("lspkind")
 
-            opts.mapping = opts.mapping or {}
-            opts.mapping["<leader><Tab>"] = cmp.mapping(function(fallback)
-                if cmp.visible() then
-                    cmp.select_next_item()
-                elseif luasnip.expand_or_jumpable() then
-                    luasnip.expand_or_jump()
-                elseif has_words_before() then
-                    cmp.complete()
-                else
-                    fallback()
-                end
-            end, { "i", "s" })
+            cmp.setup({
+                snippet = {
+                    expand = function(args)
+                        luasnip.lsp_expand(args.body)
+                    end,
+                },
+                window = {
+                    completion = cmp.config.window.bordered(),
+                    documentation = cmp.config.window.bordered(),
+                },
+                formatting = {
+                    format = lspkind.cmp_format({
+                        mode = 'symbol_text',
+                        maxwidth = 50,
+                        ellipsis_char = '...',
+                        menu = {
+                            nvim_lsp = "[LSP]",
+                            luasnip = "[Snip]",
+                            buffer = "[Buf]",
+                            path = "[Path]",
+                            nvim_lua = "[Lua]",
+                            copilot = "[AI]",
+                        }
+                    })
+                },
+                mapping = cmp.mapping.preset.insert({
+                    ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Insert }),
+                    ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Insert }),
+                    ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+                    ["<C-f>"] = cmp.mapping.scroll_docs(4),
+                    ["<C-Space>"] = cmp.mapping.complete(),
+                    ["<C-e>"] = cmp.mapping.abort(),
+                    ["<Tab>"] = cmp.mapping(function(fallback)
+                        if cmp.visible() then
+                            cmp.select_next_item()
+                        elseif luasnip.expand_or_jumpable() then
+                            luasnip.expand_or_jump()
+                        else
+                            fallback()
+                        end
+                    end, { "i", "s" }),
+                    ["<S-Tab>"] = cmp.mapping(function(fallback)
+                        if cmp.visible() then
+                            cmp.select_prev_item()
+                        elseif luasnip.jumpable(-1) then
+                            luasnip.jump(-1)
+                        else
+                            fallback()
+                        end
+                    end, { "i", "s" }),
+                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
+                }),
+                sources = cmp.config.sources({
+                    { name = "nvim_lsp", priority = 1000 },
+                    { name = "luasnip",  priority = 750 },
+                    { name = "buffer",   priority = 500 },
+                    { name = "path",     priority = 250 },
+                    { name = "nvim_lua" },
+                }),
+                sorting = {
+                    comparators = {
+                        cmp.config.compare.offset,
+                        cmp.config.compare.exact,
+                        cmp.config.compare.score,
+                        cmp.config.compare.kind,
+                        cmp.config.compare.sort_text,
+                        cmp.config.compare.length,
+                        cmp.config.compare.order,
+                    },
+                },
+            })
 
-            opts.mapping["<leader><S-Tab>"] = cmp.mapping(function(fallback)
-                if cmp.visible() then
-                    cmp.select_prev_item()
-                elseif luasnip.jumpable(-1) then
-                    luasnip.jump(-1)
-                else
-                    fallback()
-                end
-            end, { "i", "s" })
+            cmp.setup.cmdline({ '/', '?' }, {
+                mapping = cmp.mapping.preset.cmdline(),
+                sources = {
+                    { name = 'buffer' }
+                }
+            })
 
-            return opts
+            cmp.setup.cmdline(':', {
+                mapping = cmp.mapping.preset.cmdline(),
+                sources = cmp.config.sources({
+                    { name = 'path' }
+                }, {
+                    { name = 'cmdline' }
+                })
+            })
+        end
+    },
+    {
+        "zbirenbaum/copilot.lua",
+        cmd = "Copilot",
+        event = "InsertEnter",
+        config = function()
+            require("copilot").setup({
+                panel = {
+                    enabled = true,
+                    auto_refresh = true,
+                    keymap = {
+                        jump_prev = "[[",
+                        jump_next = "]]",
+                        accept = "<CR>",
+                        refresh = "gr",
+                        open = "<M-CR>"
+                    },
+                },
+                suggestion = {
+                    enabled = true,
+                    auto_trigger = true,
+                    debounce = 75,
+                    keymap = {
+                        accept = "<leader><Tab>",
+                        accept_word = false,
+                        accept_line = false,
+                        next = "<M-]>",
+                        prev = "<M-[>",
+                        dismiss = "<C-]>",
+                    },
+                },
+                filetypes = {
+                    yaml = false,
+                    markdown = false,
+                    help = false,
+                    gitcommit = false,
+                    gitrebase = false,
+                    hgcommit = false,
+                    svn = false,
+                    cvs = false,
+                    ["."] = false,
+                },
+            })
         end,
     },
     {
@@ -72,8 +181,8 @@ return {
 
             capabilities.offsetEncoding = { "utf-16" }
 
-            require("fidget").setup()
             require("mason").setup()
+
             require("mason-lspconfig").setup({
                 ensure_installed = {
                     "lua_ls",
@@ -87,131 +196,97 @@ return {
                     "biome",
                     "marksman",
                     "jqls",
+                    "ts_ls",
                 },
-                handlers = {
-                    function(server_name)
-                        require("lspconfig")[server_name].setup {
-                            capabilities = capabilities,
+            })
+
+            local lspconfig = require("lspconfig")
+
+            local servers = {
+                "rust_analyzer",
+                "dockerls",
+                "kotlin_language_server",
+                "taplo",
+                "yamlls",
+                "jqls",
+            }
+
+            for _, server in ipairs(servers) do
+                lspconfig[server].setup({
+                    capabilities = capabilities,
+                })
+            end
+
+            lspconfig.lua_ls.setup({
+                capabilities = capabilities,
+                settings = {
+                    Lua = {
+                        diagnostics = {
+                            globals = { "vim" }
                         }
-                    end,
-                    ["lua_ls"] = function()
-                        local lspconfig = require("lspconfig")
-                        lspconfig["lua_ls"].setup {
-                            capabilities = capabilities,
-                            settings = {
-                                Lua = {
-                                    diagnostics = {
-                                        globals = { "vim" }
-                                    }
-                                }
-                            }
-                        }
-                    end,
-                    ["ruff"] = function()
-                        local lspconfig = require("lspconfig")
-                        lspconfig["ruff"].setup {
-                            capabilities = capabilities,
-                            on_attach = function(client, _)
-                                client.server_capabilities.hoverProvider = false
-                            end,
-                            init_options = {
-                                args = {},
-                            }
-                        }
-                    end,
-                    ["pyright"] = function()
-                        local lspconfig = require("lspconfig")
-                        lspconfig["pyright"].setup {
-                            capabilities = (function()
-                                capabilities.textDocument.publishDiagnostics.tagSupport.valueSet = { 2 }
-                                return capabilities
-                            end)(),
-                            settings = {
-                                python = {
-                                    analysis = {
-                                        useLibraryCodeForTypes = true,
-                                        diagnosticSeverityOverrides = {
-                                            reportUnusedVariable = "warning",
-                                        },
-                                        typeCheckingMode = "basic",
-                                    }
-                                }
-                            }
-                        }
-                    end,
-                    ["tsserver"] = function()
-                        local lspconfig = require("lspconfig")
-                        lspconfig["tsserver"].setup {
-                            capabilities = capabilities,
-                            on_init = function(client)
-                                client.offset_encoding = "utf-16"
-                            end,
-                        }
-                    end,
-                    ["biome"] = function()
-                        local lspconfig = require("lspconfig")
-                        lspconfig["biome"].setup {
-                            capabilities = capabilities,
-                            on_init = function(client)
-                                client.offset_encoding = "utf-16"
-                            end,
-                        }
-                    end,
-                    ["marksman"] = function()
-                        local lspconfig = require("lspconfig")
-                        lspconfig["marksman"].setup {
-                            capabilities = capabilities,
-                            on_init = function(client)
-                                client.offset_encoding = "utf-16"
-                            end,
-                            settings = {
-                                filetypes = {
-                                    "markdown",
-                                    "quarto",
-                                },
-                                root_dir = require("lspconfig.util").root_pattern(".git", ".marksman.toml", "_quarto.yml"),
-                            }
-                        }
-                    end,
-                    ["jqls"] = function()
-                        local lspconfig = require("lspconfig")
-                        lspconfig["jqls"].setup {
-                            capabilities = capabilities,
-                            on_init = function(client)
-                                client.offset_encoding = "utf-16"
-                            end,
-                        }
-                    end,
+                    }
                 }
             })
 
-            local cmp = require("cmp")
-            local luasnip = require('luasnip')
-            local cmp_select = { behavior = cmp.SelectBehavior.Select }
-            cmp.setup({
-                snippet = {
-                    expand = function(args)
-                        require("luasnip").lsp_expand(args.body)
-                    end,
-                },
-                mapping = {
-                    ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
-                    ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
-                    ['<C-y>'] = cmp.mapping.confirm({ select = true }),
-                    ['<C-Space>'] = cmp.mapping.complete(),
-                },
-                sources = {
-                    { name = 'otter' },
-                    { name = 'nvim_lsp' },
-                    { name = 'luasnip' },
-                    { name = 'buffer' },
-                    { name = 'path' },
-                    { name = 'cmdline' },
-                },
+            lspconfig.ruff.setup({
+                capabilities = capabilities,
+                on_attach = function(client, _)
+                    client.server_capabilities.hoverProvider = false
+                end,
+            })
+
+            lspconfig.pyright.setup({
+                capabilities = (function()
+                    capabilities.textDocument.publishDiagnostics.tagSupport.valueSet = { 2 }
+                    return capabilities
+                end)(),
+                settings = {
+                    python = {
+                        analysis = {
+                            useLibraryCodeForTypes = true,
+                            diagnosticSeverityOverrides = {
+                                reportUnusedVariable = "warning",
+                            },
+                            typeCheckingMode = "basic",
+                        }
+                    }
+                }
+            })
+
+            lspconfig.ts_ls.setup({
+                capabilities = capabilities,
+                on_init = function(client)
+                    client.offset_encoding = "utf-16"
+                end,
+            })
+
+            lspconfig.biome.setup({
+                capabilities = capabilities,
+                on_init = function(client)
+                    client.offset_encoding = "utf-16"
+                end,
+            })
+
+            lspconfig.marksman.setup({
+                capabilities = capabilities,
+                on_init = function(client)
+                    client.offset_encoding = "utf-16"
+                end,
+                settings = {
+                    filetypes = {
+                        "markdown",
+                        "quarto",
+                    },
+                    root_dir = require("lspconfig.util").root_pattern(".git", ".marksman.toml", "_quarto.yml"),
+                }
             })
 
             vim.diagnostic.config({
-                update_in_insert = true,
+                virtual_text = true,
+                signs = true,
+                update_in_insert = false,
+                underline = true,
+                severity_sort = true,
                 float = {
                     focusable = false,
                     style = "minimal",
@@ -219,11 +294,24 @@ return {
                     source = "always",
                     header = "",
                     prefix = "",
-                }
+                },
             })
-            luasnip.filetype_extend("quarto", { "markdown" })
-        end,
+
+            local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
+            for type, icon in pairs(signs) do
+                local hl = "DiagnosticSign" .. type
+                vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+            end
+
+            require("fidget").setup({
+                text = {
+                    spinner = "pipe",
+                },
+                window = {
+                    relative = "editor",
+                },
+            })
+        end
     },
-    "github/copilot.vim",
-    'gptlang/CopilotChat.nvim',
 }
+
