@@ -114,50 +114,6 @@ return {
         end
     },
     {
-        "zbirenbaum/copilot.lua",
-        cmd = "Copilot",
-        event = "InsertEnter",
-        config = function()
-            require("copilot").setup({
-                panel = {
-                    enabled = true,
-                    auto_refresh = true,
-                    keymap = {
-                        jump_prev = "[[",
-                        jump_next = "]]",
-                        accept = "<CR>",
-                        refresh = "gr",
-                        open = "<M-CR>"
-                    },
-                },
-                suggestion = {
-                    enabled = true,
-                    auto_trigger = true,
-                    debounce = 75,
-                    keymap = {
-                        accept = "<leader><Tab>",
-                        accept_word = false,
-                        accept_line = false,
-                        next = "<M-]>",
-                        prev = "<M-[>",
-                        dismiss = "<C-]>",
-                    },
-                },
-                filetypes = {
-                    yaml = false,
-                    markdown = false,
-                    help = false,
-                    gitcommit = false,
-                    gitrebase = false,
-                    hgcommit = false,
-                    svn = false,
-                    cvs = false,
-                    ["."] = false,
-                },
-            })
-        end,
-    },
-    {
         "neovim/nvim-lspconfig",
         dependencies = {
             "williamboman/mason.nvim",
@@ -169,7 +125,6 @@ return {
             "hrsh7th/nvim-cmp",
             "L3MON4D3/LuaSnip",
             "saadparwaiz1/cmp_luasnip",
-            "j-hui/fidget.nvim",
         },
         config = function()
             local cmp_lsp = require("cmp_nvim_lsp")
@@ -186,17 +141,9 @@ return {
             require("mason-lspconfig").setup({
                 ensure_installed = {
                     "lua_ls",
-                    "rust_analyzer",
                     "ruff",
-                    "pyright",
-                    "dockerls",
-                    "kotlin_language_server",
                     "taplo",
-                    "yamlls",
-                    "biome",
                     "marksman",
-                    "jqls",
-                    "ts_ls",
                 },
             })
 
@@ -204,11 +151,7 @@ return {
 
             local servers = {
                 "rust_analyzer",
-                "dockerls",
-                "kotlin_language_server",
                 "taplo",
-                "yamlls",
-                "jqls",
             }
 
             for _, server in ipairs(servers) do
@@ -235,37 +178,6 @@ return {
                 end,
             })
 
-            lspconfig.pyright.setup({
-                capabilities = (function()
-                    capabilities.textDocument.publishDiagnostics.tagSupport.valueSet = { 2 }
-                    return capabilities
-                end)(),
-                settings = {
-                    python = {
-                        analysis = {
-                            useLibraryCodeForTypes = true,
-                            diagnosticSeverityOverrides = {
-                                reportUnusedVariable = "warning",
-                            },
-                            typeCheckingMode = "basic",
-                        }
-                    }
-                }
-            })
-
-            lspconfig.ts_ls.setup({
-                capabilities = capabilities,
-                on_init = function(client)
-                    client.offset_encoding = "utf-16"
-                end,
-            })
-
-            lspconfig.biome.setup({
-                capabilities = capabilities,
-                on_init = function(client)
-                    client.offset_encoding = "utf-16"
-                end,
-            })
 
             lspconfig.marksman.setup({
                 capabilities = capabilities,
@@ -275,9 +187,7 @@ return {
                 settings = {
                     filetypes = {
                         "markdown",
-                        "quarto",
                     },
-                    root_dir = require("lspconfig.util").root_pattern(".git", ".marksman.toml", "_quarto.yml"),
                 }
             })
 
@@ -302,16 +212,6 @@ return {
                 local hl = "DiagnosticSign" .. type
                 vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
             end
-
-            require("fidget").setup({
-                text = {
-                    spinner = "pipe",
-                },
-                window = {
-                    relative = "editor",
-                },
-            })
         end
     },
 }
-

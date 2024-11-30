@@ -49,24 +49,19 @@ return {
             local configs = require('nvim-treesitter.configs')
             configs.setup({
                 ensure_installed = {
-                    'bash',
-                    'json',
                     'lua',
                     'python',
                     'rust',
                     'toml',
                     'yaml',
-                    'dart',
-                    'typescript',
                     'markdown',
                     'markdown_inline',
-                    'tsx',
                     'html',
                     'css',
                     'vim',
                     'query'
                 },
-                sync_install = false,
+                sync_install = true,
                 highlight = { enable = true },
                 indent = { enable = false },
             })
