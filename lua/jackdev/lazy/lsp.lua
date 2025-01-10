@@ -194,9 +194,9 @@ return {
                     "taplo",
                     "yamlls",
                     "biome",
-                    "marksman",
                     "jqls",
                     "ts_ls",
+                    "nim_langserver",
                 },
             })
 
@@ -216,6 +216,25 @@ return {
                     capabilities = capabilities,
                 })
             end
+            -- Nim Language Server setup
+            lspconfig.nim_langserver.setup({
+                capabilities = capabilities,
+                settings = {
+                    nim = {
+                        projectMapping = {},
+                        autoCheckFile = true,
+                        autoCheckProject = true,
+                        autoRestart = true,
+                        checkOnSave = true,
+                        logNimsuggest = false,
+                        formatOnSave = true,
+                        timeout = 120000,                  -- 2 minutes
+                        nimsuggestIdleTimeout = 120000,    -- 2 minutes
+                        useNimCheck = true,
+                        notificationVerbosity = "warning", -- Can be "none", "error", "warning", or "info"
+                    }
+                }
+            })
 
             lspconfig.lua_ls.setup({
                 capabilities = capabilities,
@@ -267,20 +286,6 @@ return {
                 end,
             })
 
-            lspconfig.marksman.setup({
-                capabilities = capabilities,
-                on_init = function(client)
-                    client.offset_encoding = "utf-16"
-                end,
-                settings = {
-                    filetypes = {
-                        "markdown",
-                        "quarto",
-                    },
-                    root_dir = require("lspconfig.util").root_pattern(".git", ".marksman.toml", "_quarto.yml"),
-                }
-            })
-
             vim.diagnostic.config({
                 virtual_text = true,
                 signs = true,
@@ -314,4 +319,3 @@ return {
         end
     },
 }
-

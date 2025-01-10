@@ -15,9 +15,8 @@ return {
                 {
                     type = 'python',
                     request = 'attach',
-                    name = 'Debugpy',
+                    name = 'Python: Attach',
                     justMyCode = false,
-                    host = 'localhost',
                     port = 5678,
                 }
             }
